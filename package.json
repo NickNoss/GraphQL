@@ -1,17 +1,6 @@
 {
-  "name": "graphql",
-  "version": "1.0.0",
-  "description": "exercises for graphql course",
-  "main": "library-backend.js",
-  "scripts": {
-    "start": "node library-backend.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "author": "",
-  "license": "ISC",
   "dependencies": {
-    "@apollo/server": "^5.0.0",
-    "graphql": "^16.11.0",
-    "uuid": "^11.1.0"
+    "@apollo/client": "^3.13.9",
+    "graphql": "^16.11.0"
   }
 }
