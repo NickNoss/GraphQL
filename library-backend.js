@@ -122,6 +122,11 @@ type Book {
       author: String!
       genres: [String!]!
       ): Book!
+
+    editAuthor(
+      name: String!
+      setBornTo: Int!
+    ): Author
   }
 `
 
@@ -173,6 +178,18 @@ const resolvers = {
 
       books.push(newBook);
       return newBook;
+    },
+    editAuthor: (root, args) => {
+      // Find the author by name
+      const author = authors.find(a => a.name === args.name);
+      // If no author, return null
+      if (!author) {
+        return null; // author not found
+      }
+
+      // Update the author's birth year
+      author.born = args.setBornTo;
+      return author; // return the author updated
     }
   }
 }
