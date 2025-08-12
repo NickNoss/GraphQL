@@ -1,5 +1,6 @@
 // import apollo client and necessary hooks
-import { useQuery, gql } from '@apollo/client'
+import { useQuery, gql, useMutation } from '@apollo/client'
+import { useState } from 'react'
 import PropTypes from 'prop-types'
 
 // GraphQL query to fetch all authors
@@ -13,9 +14,25 @@ const ALL_AUTHORS = gql`
   }
 `
 
+const SET_BIRTHYEAR = gql`
+  mutation editAuthor($name: String!, $setBornTo: Int!) {
+    editAuthor(name: $name, setBornTo: $setBornTo) {
+      name
+      born
+      bookCount
+    }
+  }
+`
+
 const Authors = (props) => {
   // use the useQuery hook to fetch authors
   const { loading, error, data } = useQuery(ALL_AUTHORS)
+  const [name, setName] = useState('')
+  const [born, setBorn] = useState('')
+
+  const [editAuthor] = useMutation(SET_BIRTHYEAR, {
+    refetchQueries: [{ query: ALL_AUTHORS }],
+  })
 
   // if the component is not supposed to show, return null
   if (!props.show) {
@@ -28,6 +45,22 @@ const Authors = (props) => {
 
   // destructure authors from the fetched data
   const authors = data.allAuthors
+
+  const submit = async (event) => {
+    event.preventDefault()
+    if (!name || born === '') {
+      alert('Please fill in both name and birth year')
+      return
+    }
+    await editAuthor({
+      variables: {
+        name,
+        setBornTo: Number(born),
+      },
+    })
+    setName('')
+    setBorn('')
+  }
 
   return (
     <div>
@@ -48,6 +81,28 @@ const Authors = (props) => {
           ))}
         </tbody>
       </table>
+
+      <h3>Set birthyear</h3>
+<form onSubmit={submit}>
+  <div>
+    author
+    <input
+      type="text"
+      value={name}
+      onChange={(e) => setName(e.target.value)}
+      placeholder="Kirjoita kirjailijan nimi"
+    />
+  </div>
+  <div>
+    born
+    <input
+      type="number"
+      value={born}
+      onChange={(e) => setBorn(e.target.value)}
+    />
+  </div>
+  <button type="submit">update author</button>
+</form>
     </div>
   )
 }

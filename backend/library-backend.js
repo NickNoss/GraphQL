@@ -151,16 +151,13 @@ const resolvers = {
         counts[book.author] = (counts[book.author] || 0) + 1;
       });
       // transform into array of objects
-      return Object.entries(counts).map(([name, bookCount]) => {
-        const author = authors.find(a => a.name === name);
-        return {
-          name,
-          born: author ? author.born : null,
-          bookCount
-        };
-        });
-      }
-    },
+      return authors.map(author => ({
+        name: author.name,
+        born: author.born,
+        bookCount: counts[author.name] || 0, // default to 0 if no books found
+      }));
+    }
+  },
   Mutation: {
     addBook: (root, args) => {
       // If the author does not exist, add them to the authors array
@@ -184,12 +181,16 @@ const resolvers = {
       const author = authors.find(a => a.name === args.name);
       // If no author, return null
       if (!author) {
+        console.log('editAuthor: author not found for', args.name);
         return null; // author not found
       }
 
       // Update the author's birth year
       author.born = args.setBornTo;
-      return author; // return the author updated
+      const bookCount = books.filter(book => book.author === author.name).length
+      const updatedAuthor = { ...author, bookCount };
+      console.log('editAuthor: returning', updatedAuthor);
+      return updatedAuthor;
     }
   }
 }
