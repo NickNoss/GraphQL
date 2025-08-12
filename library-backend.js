@@ -94,20 +94,31 @@ let books = [
 ]
 
 const typeDefs = `
-  type Book {
-    title: String!
-    author: String!
-    published: Int!
-    genres: [String!]!
+  type Author {
+    name: String!
+    bookCount: Int!
   }
+
   type Query {
-    allBooks: [Book!]!
+    allAuthors: [Author!]!
   }
 `
 
 const resolvers = {
   Query: {
-    allBooks: () => books,
+    allAuthors: () => {
+      const counts = {};
+
+      // books per author
+      books.forEach(book => {
+        counts[book.author] = (counts[book.author] || 0) + 1;
+      });
+      // transform into array of objects
+      return Object.entries(counts).map(([name, bookCount]) => ({
+        name,
+        bookCount,
+        }));
+      }
     }
   }
 
