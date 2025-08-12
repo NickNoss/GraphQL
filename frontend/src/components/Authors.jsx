@@ -57,3 +57,4 @@ Authors.propTypes = {
 }
 
 export default Authors
+export { ALL_AUTHORS }

@@ -1,4 +1,19 @@
 import { useState } from 'react'
+import { useMutation, gql } from '@apollo/client'
+import PropTypes from 'prop-types'
+import { ALL_AUTHORS } from './Authors'
+import { ALL_BOOKS } from './Books'
+
+const ADD_BOOK = gql`
+  mutation addBook($title: String!, $author: String!, $published: Int!, $genres: [String!]!) {
+    addBook(title: $title, author: $author, published: $published, genres: $genres) {
+      title
+      author
+      published
+      genres
+    }
+  }
+`
 
 const NewBook = (props) => {
   const [title, setTitle] = useState('')
@@ -7,6 +22,30 @@ const NewBook = (props) => {
   const [genre, setGenre] = useState('')
   const [genres, setGenres] = useState([])
 
+  const [addBook] = useMutation(ADD_BOOK, {
+    update: (cache, { data: { addBook } }) => {
+      // Update the cache with the new book
+      const { allBooks } = cache.readQuery({ query: ALL_BOOKS }) || { allBooks: [] }
+      cache.writeQuery({
+        query: ALL_BOOKS,
+        data: { allBooks: allBooks.concat(addBook) },
+      })
+
+      try {
+        const { allAuthors } = cache.readQuery({ query: ALL_AUTHORS }) || { allAuthors: [] }
+        const authorExists = allAuthors.find(a => a.name === addBook.author)
+        if (!authorExists) {
+          cache.writeQuery({
+            query: ALL_AUTHORS,
+            data: { allAuthors: allAuthors.concat({ name: addBook.author, born: null, bookCount: 1 }) },
+          })
+        }
+      } catch (e) {
+        console.error("Error updating authors cache:", e)
+      }
+    }
+  })
+
   if (!props.show) {
     return null
   }
@@ -14,7 +53,22 @@ const NewBook = (props) => {
   const submit = async (event) => {
     event.preventDefault()
 
-    console.log('add book...')
+    if (!title || !author || !published || genres.length === 0) {
+    alert('Please fill all fields and add at least one genre')
+    return
+  }
+  try {
+    await addBook({
+      variables: {
+        title,
+        author,
+        published: Number(published),
+        genres,
+      }
+    })
+  } catch (error) {
+    console.error("Error adding book:", error)
+  }
 
     setTitle('')
     setPublished('')
@@ -24,8 +78,10 @@ const NewBook = (props) => {
   }
 
   const addGenre = () => {
-    setGenres(genres.concat(genre))
-    setGenre('')
+    if (genre.trim() && !genres.includes(genre.trim())) {
+      setGenres(genres.concat(genre.trim()))
+      setGenre('')
+    }
   }
 
   return (
@@ -68,5 +124,7 @@ const NewBook = (props) => {
     </div>
   )
 }
-
+NewBook.propTypes = {
+  show: PropTypes.bool.isRequired,
+}
 export default NewBook
