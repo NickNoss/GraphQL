@@ -3,6 +3,7 @@ const { startStandaloneServer } = require('@apollo/server/standalone')
 const { v1: uuid } = require('uuid')
 const Book = require('./models/book')
 const Author = require('./models/author')
+const { GraphQLError } = require('graphql')
 
 const typeDefs = `
 type Book {
@@ -46,60 +47,94 @@ const resolvers = {
     bookCount: async () => Book.collection.countDocuments(),
     authorCount: async () => Author.collection.countDocuments(),
     allBooks: async (root, args) => {
-        const filter = {}
-        if (args.author) {
+      const filter = {}
+      if (args.author) {
         const author = await Author.findOne({ name: args.author })
         if (author) filter.author = author._id
-    }
-    if (args.genre) {
-     filter.genres = { $in: [args.genre] }
-    }
-    return Book.find(filter).populate('author')
-}
-,
+      }
+      if (args.genre) {
+        filter.genres = { $in: [args.genre] }
+      }
+      return Book.find(filter).populate('author')
+    },
     allAuthors: async () => {
       const authors = await Author.find({})
       return Promise.all(
         authors.map(async (author) => {
-        const bookCount = await Book.countDocuments({ author: author._id })
-        return { ...author.toObject(), bookCount }
-      })
-    )
-}
-
+          const bookCount = await Book.countDocuments({ author: author._id })
+          return { ...author.toObject(), bookCount }
+        })
+      )
+    }
   },
   Mutation: {
     addBook: async (root, args) => {
-      // Tarkista löytyykö kirjailija
-      let author = await Author.findOne({ name: args.author })
-      if (!author) {
-        author = new Author({ name: args.author })
-        await author.save()
+      try {
+        if (!args.title || args.title.length < 3) {
+          throw new GraphQLError('Kirjan nimi on liian lyhyt', {
+            extensions: { code: 'BAD_USER_INPUT', invalidArgs: args }
+          })
+        }
+        if (!args.author || args.author.length < 3) {
+          throw new GraphQLError('Kirjailijan nimi on liian lyhyt', {
+            extensions: { code: 'BAD_USER_INPUT', invalidArgs: args }
+          })
+        }
+
+        let author = await Author.findOne({ name: args.author })
+        if (!author) {
+          author = new Author({ name: args.author })
+          await author.save()
+        }
+
+        const book = new Book({
+          title: args.title,
+          published: args.published,
+          genres: args.genres,
+          author: author._id
+        })
+
+        await book.save()
+        return book.populate('author')
+      } catch (error) {
+        if (error.name === 'ValidationError') {
+          throw new GraphQLError('Kirjan tiedot ei kelpaa', {
+            extensions: {
+              code: 'BAD_USER_INPUT',
+              invalidArgs: args,
+              error: error.message
+            }
+          })
+        }
+        throw error
       }
-
-      // Luo kirja ja liitä siihen authorin id
-      const book = new Book({
-        title: args.title,
-        published: args.published,
-        genres: args.genres,
-        author: author._id
-      })
-
-      await book.save()
-
-      // Populate, jotta GraphQL palauttaa Author-olion eikä vain id:n
-      return book.populate('author')
     },
     editAuthor: async (root, args) => {
-      const author = await Author.findOne({ name: args.name })
+      try {
+        const author = await Author.findOne({ name: args.name })
+        if (!author) return null
 
-      if (!author) return null
+        if (args.setBornTo && typeof args.setBornTo !== 'number') {
+          throw new GraphQLError('Syntymävuoden on oltava numero', {
+            extensions: { code: 'BAD_USER_INPUT', invalidArgs: args }
+          })
+        }
 
-      author.born = args.setBornTo
-
-      await author.save()
-
-      return author
+        author.born = args.setBornTo
+        await author.save()
+        return author
+      } catch (error) {
+        if (error.name === 'ValidationError') {
+          throw new GraphQLError('Kirjailijan tiedot ei kelpaa', {
+            extensions: {
+              code: 'BAD_USER_INPUT',
+              invalidArgs: args,
+              error: error.message
+            }
+          })
+        }
+        throw error
+      }
     }
   }
 }
