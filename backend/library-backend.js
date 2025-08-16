@@ -4,8 +4,36 @@ const { v1: uuid } = require('uuid')
 const Book = require('./models/book')
 const Author = require('./models/author')
 const { GraphQLError } = require('graphql')
+const jwt = require('jsonwebtoken')
+const User = require('./models/user')
 
 const typeDefs = `
+type User {
+    username: String!
+    favoriteGenre: String!
+    id: ID!
+  }
+
+type Token {
+    value: String!
+  }
+
+extend type Query {
+    me: User
+  }
+
+extend type Mutation {
+    createUser(
+      username: String!
+      favoriteGenre: String!
+    ): User!
+
+    login(
+      username: String!
+      password: String!
+    ): Token
+  }
+
 type Book {
     title: String!
     author: Author!
@@ -65,10 +93,18 @@ const resolvers = {
           return { ...author.toObject(), bookCount }
         })
       )
+    },
+    me: (root, args, context) => {
+      return context.currentUser
     }
   },
   Mutation: {
-    addBook: async (root, args) => {
+    addBook: async (root, args, context) => {
+      if (!context.currentUser) {
+        throw new GraphQLError('Unauthorized', {
+          extensions: { code: 'UNAUTHENTICATED' }
+        })
+      }
       try {
         if (!args.title || args.title.length < 3) {
           throw new GraphQLError('Kirjan nimi on liian lyhyt', {
@@ -135,6 +171,36 @@ const resolvers = {
         }
         throw error
       }
+    },
+    createUser: async (root, args) => {
+      const user = new User({
+        username: args.username,
+        favoriteGenre: args.favoriteGenre
+      })
+      return user.save().catch(error => {
+        throw new GraphQLError('Käyttäjän luonti epäonnistui', {
+          extensions: {
+            code: 'BAD_USER_INPUT',
+            invalidArgs: args,
+            error
+          }
+        })
+      })
+    },
+    login: async (root, args) => {
+      const user = await User.findOne({ username: args.username })
+      if (!user || args.password !== 'salasana') { 
+        throw new GraphQLError('Käyttäjätunnus tai salasana on väärin', {
+          extensions: { code: 'BAD_USER_INPUT' }
+        })
+      }
+
+    const userForToken = {
+        username: user.username,
+        id: user._id
+      }
+
+      return { value: jwt.sign(userForToken, 'nopeestialkuun') }
     }
   }
 }
@@ -161,6 +227,15 @@ const server = new ApolloServer({
 
 startStandaloneServer(server, {
   listen: { port: 4000 },
+  context: async ({ req }) => {
+    const auth = req ? req.headers.authorization : null
+    if (auth && auth.startsWith('bearer ')) {
+      const decodedToken = jwt.verify(auth.substring(7), 'nopeestialkuun')
+      const currentUser = await User.findById(decodedToken.id)
+      return { currentUser }
+    }
+    return {}
+  }
 }).then(({ url }) => {
   console.log(`Server ready at ${url}`)
 })

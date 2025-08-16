@@ -3,6 +3,7 @@
     "@apollo/client": "^3.13.9",
     "dotenv": "^17.2.1",
     "graphql": "^16.11.0",
+    "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.17.1"
   }
 }
