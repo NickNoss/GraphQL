@@ -6,9 +6,9 @@ import { ALL_BOOKS, ALL_GENRES } from '../queries'
 const Books = ({ show }) => {
   const [selectedGenre, setSelectedGenre] = useState(null)
 
-  const { loading: booksLoading, error: booksError, data: booksData } = useQuery(ALL_BOOKS, {
+  const { loading: booksLoading, error: booksError, data: booksData, refetch } = useQuery(ALL_BOOKS, {
     variables: { genre: selectedGenre },
-    fetchPolicy: 'network-only',
+    fetchPolicy: 'cache-and-network',
   })
 
   const { loading: genresLoading, error: genresError, data: genresData } = useQuery(ALL_GENRES)
@@ -19,6 +19,11 @@ const Books = ({ show }) => {
 
   const books = booksData?.allBooks || []
   const allGenres = genresData?.allGenres || []
+
+  const handleGenreClick = (genre) => {
+    setSelectedGenre(genre)
+    refetch({ genre })
+  }
 
   return (
     <div>
@@ -50,7 +55,7 @@ const Books = ({ show }) => {
       </table>
 
       <div style={{ marginTop: '1em' }}>
-        <button onClick={() => setSelectedGenre(null)}>all genres</button>
+        <button onClick={() => handleGenreClick(null)}>all genres</button>
         {allGenres.map((genre) => (
           <button key={genre} onClick={() => setSelectedGenre(genre)}>
             {genre}
