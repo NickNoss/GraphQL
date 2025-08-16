@@ -1,5 +1,26 @@
 import { gql } from "@apollo/client";
 
+// GraphQL query to fetch all authors
+export const ALL_AUTHORS = gql`
+  query {
+    allAuthors {
+      name
+      born
+      bookCount
+    }
+  }
+`
+
+export const SET_BIRTHYEAR = gql`
+  mutation editAuthor($name: String!, $setBornTo: Int!) {
+    editAuthor(name: $name, setBornTo: $setBornTo) {
+      name
+      born
+      bookCount
+    }
+  }
+`
+
 export const LOGIN = gql`
     mutation login($username: String!, $password: String!) {
         login(username: $username, password: $password) {
@@ -30,3 +51,9 @@ export const ALL_BOOKS = gql`
     }
   }
 `
+
+export const ALL_GENRES = gql`
+    query allGenres {
+        allGenres
+    }
+    `;

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useMutation, gql } from '@apollo/client'
 import PropTypes from 'prop-types'
 import { ALL_AUTHORS } from './Authors'
-import { ALL_BOOKS } from './Books'
+import { ALL_BOOKS } from '../queries'
 
 const ADD_BOOK = gql`
   mutation addBook($title: String!, $author: String!, $published: Int!, $genres: [String!]!) {

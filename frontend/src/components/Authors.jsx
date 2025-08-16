@@ -1,28 +1,8 @@
 // import apollo client and necessary hooks
-import { useQuery, gql, useMutation } from '@apollo/client'
+import { useQuery, useMutation } from '@apollo/client'
 import { useState } from 'react'
 import PropTypes from 'prop-types'
-
-// GraphQL query to fetch all authors
-const ALL_AUTHORS = gql`
-  query {
-    allAuthors {
-      name
-      born
-      bookCount
-    }
-  }
-`
-
-const SET_BIRTHYEAR = gql`
-  mutation editAuthor($name: String!, $setBornTo: Int!) {
-    editAuthor(name: $name, setBornTo: $setBornTo) {
-      name
-      born
-      bookCount
-    }
-  }
-`
+import { ALL_AUTHORS, SET_BIRTHYEAR } from '../queries'
 
 const Authors = (props) => {
   // use the useQuery hook to fetch authors

@@ -1,28 +1,24 @@
-// import apollo client and necessary hooks
 import { useQuery } from '@apollo/client'
 import PropTypes from 'prop-types'
 import { useState } from 'react'
-import { ALL_BOOKS } from '../queries'
+import { ALL_BOOKS, ALL_GENRES } from '../queries'
 
-const Books = (props) => {
-  // use the useQuery hook to fetch books
-  const { loading, error, data } = useQuery(ALL_BOOKS)
-
+const Books = ({ show }) => {
   const [selectedGenre, setSelectedGenre] = useState(null)
 
-  if (!props.show) {
-    return null
-  }
+  const { loading: booksLoading, error: booksError, data: booksData } = useQuery(ALL_BOOKS, {
+    variables: { genre: selectedGenre },
+    fetchPolicy: 'network-only',
+  })
 
-  if (loading) return <div>loading...</div>
-  if (error) return <div>Error: {error.message}</div>
+  const { loading: genresLoading, error: genresError, data: genresData } = useQuery(ALL_GENRES)
 
-  const books = data.allBooks
+  if (!show) return null
+  if (booksLoading || genresLoading) return <div>loading...</div>
+  if (booksError || genresError) return <div>Error: {booksError?.message || genresError?.message}</div>
 
-  const allGenres = [...new Set(books.flatMap(book => book.genres))]
-  const filteredBooks = selectedGenre
-    ? books.filter(book => book.genres.includes(selectedGenre))
-    : books
+  const books = booksData?.allBooks || []
+  const allGenres = genresData?.allGenres || []
 
   return (
     <div>
@@ -35,17 +31,19 @@ const Books = (props) => {
       )}
 
       <table>
-        <tbody>
+        <thead>
           <tr>
-            <th></th>
+            <th>title</th>
             <th>author</th>
             <th>published</th>
           </tr>
-          {filteredBooks.map((a) => (
-            <tr key={a.title}>
-              <td>{a.title}</td>
-              <td>{a.author.name}</td>
-              <td>{a.published}</td>
+        </thead>
+        <tbody>
+          {books.map((book) => (
+            <tr key={book.title}>
+              <td>{book.title}</td>
+              <td>{book.author.name}</td>
+              <td>{book.published}</td>
             </tr>
           ))}
         </tbody>
@@ -62,9 +60,9 @@ const Books = (props) => {
     </div>
   )
 }
+
 Books.propTypes = {
   show: PropTypes.bool.isRequired,
 }
 
 export default Books
-export { ALL_BOOKS }
