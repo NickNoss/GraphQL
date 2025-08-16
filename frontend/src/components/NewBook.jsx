@@ -8,7 +8,10 @@ const ADD_BOOK = gql`
   mutation addBook($title: String!, $author: String!, $published: Int!, $genres: [String!]!) {
     addBook(title: $title, author: $author, published: $published, genres: $genres) {
       title
-      author
+      author {
+        name
+        born
+      }
       published
       genres
     }
@@ -37,7 +40,7 @@ const NewBook = (props) => {
         if (!authorExists) {
           cache.writeQuery({
             query: ALL_AUTHORS,
-            data: { allAuthors: allAuthors.concat({ name: addBook.author, born: null, bookCount: 1 }) },
+            data: { allAuthors: allAuthors.concat({ name: addBook.author, born: addBook.author.born, bookCount: 1 }) },
           })
         }
       } catch (e) {
