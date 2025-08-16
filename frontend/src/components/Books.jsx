@@ -1,21 +1,8 @@
 // import apollo client and necessary hooks
-import { useQuery, gql } from '@apollo/client'
+import { useQuery } from '@apollo/client'
 import PropTypes from 'prop-types'
 import { useState } from 'react'
-
-// GraphQL query to fetch all books
-const ALL_BOOKS = gql`
-  query {
-    allBooks {
-      title
-      author {
-        name
-      }
-      published
-      genres
-    }
-  }
-`
+import { ALL_BOOKS } from '../queries'
 
 const Books = (props) => {
   // use the useQuery hook to fetch books

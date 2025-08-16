@@ -7,3 +7,26 @@ export const LOGIN = gql`
         }
     }
 `;
+
+export const ME = gql`
+    query {
+        me {   
+            username
+            favoriteGenre
+        }
+    }
+`;
+
+// GraphQL query to fetch all books
+export const ALL_BOOKS = gql`
+  query allBooks($genre: String) {
+    allBooks(genre: $genre) {
+      title
+      author {
+        name
+      }
+      published
+      genres
+    }
+  }
+`

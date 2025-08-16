@@ -3,6 +3,7 @@ import Authors from "./components/Authors";
 import Books from "./components/Books";
 import NewBook from "./components/NewBook";
 import LoginForm from "./components/LoginForm";
+import Recommended from "./components/Recommended";
 import { useEffect } from "react";
 
 
@@ -31,6 +32,7 @@ const App = () => {
         {token ? (
           <>
             <button onClick={() => setPage("add")}>add book</button>
+            <button onClick={() => setPage('recommend')}>recommendations</button>
             <button onClick={logout}>logout</button>
           </>
         ) : (
@@ -43,6 +45,8 @@ const App = () => {
       <Books show={page === "books"} />
 
       <NewBook show={page === "add"} />
+
+      <Recommended show={page === "recommend"} />
 
       {!token && <LoginForm show={page === "login"} setToken={setToken} setPage={setPage} />}
     </div>
